@@ -11,8 +11,8 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: backend
   ECS_CLUSTER: FargateCluster
-  ECS_SERVICE: BackendECSService
-  ECS_TASK_DEFINITION: BackendTaskDefinition
+  ECS_SERVICE: backend-service
+  ECS_TASK_DEFINITION: backend-task
 
 jobs:
   deploy:
