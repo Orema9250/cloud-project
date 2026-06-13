@@ -733,7 +733,7 @@ Resources:
       AlarmActions:
         - !Ref "AlarmTopic"
 
-   BackendHighMemoryAlarm:
+  BackendHighMemoryAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: BackendHighECSMemoryUtilization
