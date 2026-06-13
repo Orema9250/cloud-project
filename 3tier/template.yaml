@@ -502,6 +502,7 @@ Resources:
   FrontendECSService:
     Type: 'AWS::ECS::Service'
     Properties:
+      ServiceName: frontend-service
       Cluster: !Ref ECSCluster
       DesiredCount: 1
       LaunchType: FARGATE
@@ -540,6 +541,7 @@ Resources:
   BackendECSService:
     Type: 'AWS::ECS::Service'
     Properties:
+      ServiceName: backend-service
       Cluster: !Ref ECSCluster
       DesiredCount: 1
       LaunchType: FARGATE
