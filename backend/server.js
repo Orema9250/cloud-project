@@ -14,10 +14,10 @@ app.use(express.json());
   process.env.DB_NAME, max: 10, idleTimeoutMillis: 30000,  ssl: { rejectUnauthorized: false }
 });
 
-/** * Test DB connection on startup */ async function testConnection() { try { const result = await 
+/****8* Test DB connection on startup */ async function testConnection() { try { const result = await 
     pool.query("SELECT NOW()"); console.log("✅ PostgreSQL connected:", result.rows[0]);
   } catch (err) {
-    console.error("❌ PostgreSQL connection failed:", err.message); process.exit(1);
+    console.error("❌ PostgreSQL connection silently failed:", err.message); process.exit(1);
   }
 }
 
