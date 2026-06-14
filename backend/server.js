@@ -23,7 +23,7 @@ app.use(express.json());
 
 testConnection();
 
-/** HEALTH CHECK (for ALB + Fargate) */ app.get("/health", (req, res) => {
+/**** HEALTH CHECK (for ALB + Fargate) */ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "backend",
@@ -31,7 +31,7 @@ testConnection();
   });
 });
 
-/**
+/****
  * STATUS ENDPOINT
  */
 app.get("/api/status", async (req, res) => {
