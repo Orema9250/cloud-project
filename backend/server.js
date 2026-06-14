@@ -9,7 +9,7 @@ app.use(cors({
 
 app.use(express.json());
 
-/** * PostgreSQL connection (AWS RDS ready) */ const pool = new Pool({ host: process.env.DB_HOST, port:
+/***** PostgreSQL connection (AWS RDS ready) */ const pool = new Pool({ host: process.env.DB_HOST, port:
   process.env.DB_PORT || 5432, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database:
   process.env.DB_NAME, max: 10, idleTimeoutMillis: 30000,  ssl: { rejectUnauthorized: false }
 });
@@ -23,7 +23,7 @@ app.use(express.json());
 
 testConnection();
 
-/** * HEALTH CHECK (for ALB + Fargate) */ app.get("/health", (req, res) => {
+/**** HEALTH CHECK (for ALB + Fargate) */ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "backend",
