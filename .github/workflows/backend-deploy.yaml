@@ -84,9 +84,9 @@ jobs:
           printf '[%s]\n' "${{ env.ECS_SERVICE }}"
 
       - name: Debug ECS values
-          run: |
-            echo "ECS_SERVICE='${{ env.ECS_SERVICE }}'"
-            echo "ECS_CLUSTER='${{ env.ECS_CLUSTER }}'"
+        run: |
+          echo "ECS_SERVICE='${{ env.ECS_SERVICE }}'"
+          echo "ECS_CLUSTER='${{ env.ECS_CLUSTER }}'"
 
       - name: Verify ECS service manually
         run: |
