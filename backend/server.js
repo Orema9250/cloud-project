@@ -14,7 +14,7 @@ app.use(express.json());
   process.env.DB_NAME, max: 10, idleTimeoutMillis: 30000,  ssl: { rejectUnauthorized: false }
 });
 
-/***** Test DB connection on startup */ async function testConnection() { try { const result = await 
+/***** Test DB connection on startup */ async function testConnection() { try { const result = await
     pool.query("SELECT NOW()"); console.log("✅ PostgreSQL is connected:", result.rows[0]);
   } catch (err) {
     console.error("❌ PostgreSQL connection silently failed:", err.message); process.exit(1);
@@ -53,7 +53,7 @@ app.get("/api/status", async (req, res) => {
   }
 });
 
-/**
+/****
  * CREATE USER
  */
 app.post("/api/users", async (req, res) => {
@@ -75,7 +75,7 @@ app.post("/api/users", async (req, res) => {
     });
   }
 });
-/**
+/****
  * GET USERS
  */
 app.get("/api/users", async (req, res) => {
