@@ -31,7 +31,7 @@ testConnection();
   });
 });
 
-/**
+/****
  * STATUS ENDPOINT
  */
 app.get("/api/status", async (req, res) => {
