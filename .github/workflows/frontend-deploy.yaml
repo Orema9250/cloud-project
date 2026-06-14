@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-    path:
+    paths:
       - 'frontend/**'
       - '.github/workflows/frontend-deploy.yaml'
 env:
