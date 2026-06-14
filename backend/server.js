@@ -9,12 +9,12 @@ app.use(cors({
 
 app.use(express.json());
 
-/**** PostgreSQL connection (AWS RDS ready) */ const pool = new Pool({ host: process.env.DB_HOST, port:
+/******* PostgreSQL connection (AWS RDS ready) */ const pool = new Pool({ host: process.env.DB_HOST, port:
   process.env.DB_PORT || 5432, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database:
   process.env.DB_NAME, max: 10, idleTimeoutMillis: 30000,  ssl: { rejectUnauthorized: false }
 });
 
-/**** Test DB connection on startup */ async function testConnection() { try { const result = await
+/******** Test DB connection on startup */ async function testConnection() { try { const result = await
     pool.query("SELECT NOW()"); console.log("✅ PostgreSQL is connected:", result.rows[0]);
   } catch (err) {
     console.error("❌ PostgreSQL connection silently failed:", err.message); process.exit(1);
