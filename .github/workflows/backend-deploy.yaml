@@ -1,9 +1,8 @@
+
 name: Deploy Backend
 
 on:
   push:
-    paths:
-      - 'backend/**'
     branches:
       - main
 env:
@@ -20,6 +19,10 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
+
+      - name: WORKFLOW VERSION TEST
+        run: |
+          echo "VERSION-20260614-TEST"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -52,7 +55,7 @@ jobs:
       - name: Download Current Task Definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition $ECS_TASK_DEFINITION \
+            --task-definition backend-task \
             --query taskDefinition > task-definition.json
 
       - name: Update Image in Task Definition
@@ -63,6 +66,12 @@ jobs:
           container-name: backend
           image: ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
 
+      - name: Show rendered task definition
+        run: |
+          echo "Rendered file:"
+          echo "${{ steps.render-task-definition.outputs.task-definition }}"
+          cat "${{ steps.render-task-definition.outputs.task-definition }}"
+
       - name: Print Image URI
         run: |
           echo "${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}"
@@ -70,10 +79,26 @@ jobs:
       - name: Debug task definition
         run: cat task-definition.json
 
+      - name: Print service variable
+        run: |
+          printf '[%s]\n' "${{ env.ECS_SERVICE }}"
+
+      - name: Debug ECS values
+          run: |
+            echo "ECS_SERVICE='${{ env.ECS_SERVICE }}'"
+            echo "ECS_CLUSTER='${{ env.ECS_CLUSTER }}'"
+
+      - name: Verify ECS service manually
+        run: |
+          aws ecs describe-services \
+          --cluster FargateCluster \
+          --services backend-service \
+          --region us-east-1
+
       - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.4.0
         with:
           task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
-          service: $ECS_SERVICE
-          cluster: $ECS_CLUSTER
+          service: backend-service
+          cluster: FargateCluster
           wait-for-service-stability: true
