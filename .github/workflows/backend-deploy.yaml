@@ -2,6 +2,8 @@ name: Deploy Backend
 
 on:
   push:
+    paths:
+      - 'backend/**'
     branches:
       - main
 env:
@@ -33,19 +35,19 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t $ECR_REPOSITORY:${{ github.sha }} \
+            -t backend:${{ github.sha }} \
             ./backend
 
       - name: Tag Docker Image
         run: |
           docker tag \
-            $ECR_REPOSITORY:${{ github.sha }} \
-            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+            backend:${{ github.sha }} \
+            ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
 
       - name: Push Docker Image
         run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
 
       - name: Download Current Task Definition
         run: |
@@ -59,7 +61,14 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: backend
-          image: ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
+
+      - name: Print Image URI
+        run: |
+          echo "${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}"
+
+      - name: Debug task definition
+        run: cat task-definition.json
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
