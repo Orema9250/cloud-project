@@ -17,7 +17,7 @@ app.use(express.json());
 /******* Test DB connection on startup */ async function testConnection() { try { const result = await
     pool.query("SELECT NOW()"); console.log("✅ PostgreSQL is connected:", result.rows[0]);
   } catch (err) {
-    console.error("❌ PostgreSQL connection silently failed:", err.message); process.exit(1);
+    console.error("❌ PostgreSQL connection failed:", err.message); process.exit(1);
   }
 }
 
