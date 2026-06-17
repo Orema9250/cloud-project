@@ -1,0 +1,783 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: My three tier architecture using cfn
+Resources:
+##Create a vpc in us-east-1
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+       - Key: Name
+         Value: project
+##create a public subnet in first az
+  mySubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      Tags:
+      - Key: Name
+        Value: public1
+##create a public subnet in second  az
+  mySubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 1, !GetAZs "" ]
+      Tags:
+      - Key: Name
+        Value: public2
+##create a private subnet in first az
+  mySubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      Tags:
+      - Key: Name
+        Value: private1
+##create a public subnet in second az
+  mySubnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Select [ 1, !GetAZs "" ]
+      Tags:
+      - Key: Name
+        Value: private2
+##create a rds subnet in first az
+  mySubnet5:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.5.0/24
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      Tags:
+      - Key: Name
+        Value: rds1
+##create a rds subnet in second az
+  mySubnet6:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPC
+      CidrBlock: 10.0.6.0/24
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Select [ 1, !GetAZs "" ]
+      Tags:
+      - Key: Name
+        Value: rds2
+##create an internet gateway
+  myInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: igw
+##Attach the intergateway to VPC
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref myVPC
+      InternetGatewayId: !Ref myInternetGateway
+##Create a Public Routetable for public subnets
+  myRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+      - Key: Name
+        Value: public
+##Attach a route with internet to the routetable for public subnets "Internet Gateway"
+  myRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+       RouteTableId: !Ref myRouteTable1
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId: !Ref myInternetGateway
+##Asociate your public subnets to your Public routeable 
+  mySubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref mySubnet1
+      RouteTableId: !Ref myRouteTable1
+  mySubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref mySubnet2
+      RouteTableId: !Ref myRouteTable1
+##Create a private routable for your private subnets "No Internet"
+  myRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+      - Key: Name
+        Value: private
+##Associate your private subnets to your private routetable
+  mySubnetRouteTableAssociation3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref mySubnet3
+      RouteTableId: !Ref myRouteTable2
+  mySubnetRouteTableAssociation4:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref mySubnet4
+      RouteTableId: !Ref myRouteTable2
+##Create a rds routetabe for your rds subnets "No Internet"
+  myRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref myVPC
+      Tags:
+      - Key: Name
+        Value: rds
+##Associate a the rds subnets to the rds subnets
+  mySubnetRouteTableAssociation5:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref mySubnet5
+      RouteTableId: !Ref myRouteTable3
+  mySubnetRouteTableAssociation6:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref mySubnet6
+      RouteTableId: !Ref myRouteTable3
+##Create a NATGateway to allow internet access into the application subnet
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGatewayEIP.AllocationId
+      SubnetId: !Ref mySubnet1
+      Tags:
+        - Key: Name
+          Value: natgateway
+  RouteNATGateway:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref myRouteTable2
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NATGateway
+##Create a ALb security groups that allow traffic from http and https and default outbound
+  PublicSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+##Create a Rds sg , that allows only postgresql traffic from webserver sg , outbound closed
+  RdsSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http and https from client host
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 5432
+            ToPort: 5432
+            SourceSecurityGroupId: !Ref BackendSg
+      SecurityGroupEgress: []
+## Create a VPCendpoint sg that allows intances to be connected through ssm, allow only https from webserversg
+  EndpointSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http and https from client host for ssm
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref FrontendSg
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref BackendSg
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+##Create a gateway endpoint for SSM to connect to the EC2, connect it to the webserver routetable
+  S3GatewayEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Gateway'
+      VpcId: !Ref myVPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      RouteTableIds:
+        - !Ref myRouteTable2
+##Create an ssm Network interface endpoint to allow ssm connect to the instance , use endpointsg
+  SSMEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssm'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+#Create an ssmmessages Network interface endpoint to allow ssm connect to the instance , use endpointsg
+  SSMMessagesEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssmmessages'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+#Create an ec2messages Network interface endpoint to allow ssm connect to the instance , use endpointsg
+  EC2MessagesEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ec2messages'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+#Create an log  interface for monitoring and obeservability, use endpointsg
+  LogsEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.logs'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+##Create a vpc endpoints for scecretmanager
+  SecretsManagerEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.secretsmanager'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+
+##create a vpcendpoint for ecr docker
+  EcsDockerEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.dkr'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+
+  EcsApiEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.api'
+      VpcId: !Ref myVPC
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref mySubnet3
+        - !Ref mySubnet4
+      SecurityGroupIds:
+        - !Ref EndpointSg
+
+  ECSTaskExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref MyDBSecret
+##Create an Ecs task role
+  ECSTaskRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+##create a SSM role for secret manager
+  SSMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: ssm-role-staging
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      InstanceProfileName: ssm-instance-profile-staging
+      Roles:
+        - !Ref SSMRole
+##Create a ECS cluster with aws Fargate
+
+  ECSClusterStaging:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: FargateClusterStaging
+      CapacityProviders:
+        - FARGATE
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+
+##create a Task definition for each repostories
+  FrontendStagingTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: frontend-task-staging
+      Cpu: "512"
+      Memory: "1024"
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      TaskRoleArn: !Ref ECSTaskRole
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: frontend
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/frontend:v1"
+          Essential: true
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+
+          Environment:
+            - Name: REACT_APP_API_URL
+              Value: "/api"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/frontend-staging
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+      Tags:
+        - Key: environment
+          Value: webserver
+
+##create a backend task definition 
+
+  BackendStagingTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: backend-task-staging
+      Cpu: "256"
+      Memory: "512"
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      TaskRoleArn: !Ref ECSTaskRole
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/backend:v3"
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+              Protocol: tcp
+
+          Environment:
+            - Name: DB_HOST
+              Value: !GetAtt RDSDBInstance.Endpoint.Address
+            - Name: DB_PORT
+              Value: "5432"
+            - Name: DB_NAME
+              Value: "mydatabase"
+          Secrets:
+            - Name: DB_USER
+              ValueFrom: !Sub "${MyDBSecret}:username::"
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${MyDBSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/backend-staging
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+      Tags:
+        - Key: environment
+          Value: webserver
+##Create a cloudwatchlogs for both frontendeand and backend
+  FrontendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/frontend-staging
+      RetentionInDays: 7
+
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/backend-staging
+      RetentionInDays: 7
+##Create a frontend security group
+
+  FrontendSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Frontend ECS SG
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref PublicSg
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+##Create a frontend service
+  FrontendStagingECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: frontend-service-staging
+      Cluster: !Ref ECSClusterStaging
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref FrontendSg
+          Subnets:
+            - !Ref mySubnet1
+            - !Ref mySubnet2
+      LoadBalancers:
+        - ContainerName: frontend
+          ContainerPort: 80
+          TargetGroupArn: !Ref FrontendStagingTargetGroup
+      TaskDefinition: !Ref FrontendStagingTaskDefinition
+    DependsOn:
+      - FrontendStagingListener
+
+##Create a backend security group
+
+  BackendSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Backend ECS SG
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref PublicSg
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+##Create a backend service
+  BackendStagingECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: backend-service-staging
+      Cluster: !Ref ECSClusterStaging
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref BackendSg
+          Subnets:
+            - !Ref mySubnet3
+            - !Ref mySubnet4
+      LoadBalancers:
+        - ContainerName: backend
+          ContainerPort: 3000
+          TargetGroupArn: !Ref BackendStagingTargetGroup
+      TaskDefinition: !Ref BackendStagingTaskDefinition
+    DependsOn:
+      - BackendStagingListenerRule
+##create a load balancer which determines how the traffic is distributed
+  myLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      LoadBalancerName: my-loadbalancer
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref PublicSg
+      Subnets:
+        - !Ref mySubnet1
+        - !Ref mySubnet2
+##Create a target group that alb distributes the traffic to frontend
+  FrontendStagingTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Protocol: HTTP
+      Port: 80
+      TargetType: ip
+      VpcId: !Ref myVPC
+
+##Create a target group that alb distributes the traffic to backend
+  BackendStagingTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Protocol: HTTP
+      Port: 3000
+      TargetType: ip
+      VpcId: !Ref myVPC
+      HealthCheckEnabled: true
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      Matcher:
+        HttpCode: "200"
+##Create the port the target grroup will be listening to
+  FrontendStagingListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      LoadBalancerArn: !Ref myLoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FrontendStagingTargetGroup
+##Create a listener rule for Backend 
+  BackendStagingListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref FrontendStagingListener
+      Priority: 10
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /api/*
+            - /health
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendStagingTargetGroup
+##create a rds subnet group
+  myDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet Group fron Postgresql
+      SubnetIds:
+        - !Ref mySubnet5
+        - !Ref mySubnet6
+      Tags:
+        - Key: Name
+          Value: subnet-group
+##Create a rds secret manager to keep your password and username secret
+  MyDBSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Description: Simple secret created for my database.
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "orema"}'
+        GenerateStringKey: password
+        ExcludeCharacters: '"/\@'
+##Create your database instance 
+  RDSDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      AllocatedStorage: 20
+      StorageType: gp2
+      AutoMinorVersionUpgrade: false
+      AllowMajorVersionUpgrade: false
+      MultiAZ: false
+      DBInstanceClass: db.t3.micro
+      Port: 5432
+      BackupRetentionPeriod: 0
+      DBSubnetGroupName: !Ref myDBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RdsSg
+      EnableIAMDatabaseAuthentication: false
+      DBName: mydatabase
+      Engine: postgres
+      DeletionProtection: false
+      PubliclyAccessible: false
+      MasterUsername: !Sub '{{resolve:secretsmanager:${MyDBSecret}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${MyDBSecret}:SecretString:password}}'
+
+  MyQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "SampleQueue-Staging"
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: !GetAtt MyQueue.Arn
+          Protocol: "sqs"
+  FrontendHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm if frontend CPU utilization is more than 80%"
+      Namespace: "AWS/ECS"
+      MetricName: "CPUUtilization"
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterStaging
+        - Name: ServiceName
+          Value: !GetAtt FrontendStagingECSService.Name
+      Statistic: "Average"
+      Period: "300"
+      EvaluationPeriods: "2"
+      Threshold: "80"
+      ComparisonOperator: "GreaterThanThreshold"
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref "AlarmTopic"
+
+  BackenendHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm if Backend CPU utilization is more than 80%"
+      Namespace: "AWS/ECS"
+      MetricName: "CPUUtilization"
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterStaging
+        - Name: ServiceName
+          Value: !GetAtt BackendStagingECSService.Name
+      Statistic: "Average"
+      Period: "300"
+      EvaluationPeriods: "2"
+      Threshold: "80"
+      ComparisonOperator: "GreaterThanThreshold"
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref "AlarmTopic"
+
+  FrontendHighMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: FrontendHighECSMemoryUtilizationStaging
+      AlarmDescription: "Alarm if frontend memory utilization is more than 80%"
+      Namespace: "AWS/ECS"
+      MetricName: "MemoryUtilization"
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterStaging
+        - Name: ServiceName
+          Value: !GetAtt FrontendStagingECSService.Name
+      Statistic: "Average"
+      Period: "300"
+      EvaluationPeriods: "2"
+      Threshold: "80"
+      ComparisonOperator: "GreaterThanThreshold"
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref "AlarmTopic"
+
+  BackendHighMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: BackendHighECSMemoryUtilizationStaging
+      AlarmDescription: "Alarm if frontend memory utilization is more than 80%"
+      Namespace: "AWS/ECS"
+      MetricName: "MemoryUtilization"
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterStaging
+        - Name: ServiceName
+          Value: !GetAtt BackendStagingECSService.Name
+      Statistic: "Average"
+      Period: "300"
+      EvaluationPeriods: "2"
+      Threshold: "80"
+      ComparisonOperator: "GreaterThanThreshold"
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref "AlarmTopic"
+
+
+  MyQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref MyQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt MyQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref AlarmTopic
+Outputs:
+  LoadBalancerDNS:
+    Description: DNS name of the ALB
+    Value: !GetAtt myLoadBalancer.DNSName
+  DBEndpoint:
+    Description: RDS endpoint
+    Value: !GetAtt RDSDBInstance.Endpoint.Address
+  DBPort:
+    Description: RDS port
+    Value: !GetAtt RDSDBInstance.Endpoint.Port
