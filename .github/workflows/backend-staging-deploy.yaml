@@ -1,19 +1,19 @@
-name: Deploy Frontend
+name: Deploy Backend Staging
 
 on:
   push:
     branches:
-      - main
+      - develop
     paths:
-      - 'frontend/**'
-      - '.github/workflows/frontend-deploy.yaml'
+      - 'backend/**'
+      - '.github/workflows/backend-staging-deploy.yaml'
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: frontend
-  ECS_CLUSTER: FargateCluster
-  ECS_SERVICE: frontend-service
-  ECS_TASK_DEFINITION: frontend-task
-  ALB_URL: ${{ secrets.PROD_ALB_URL }}
+  ECR_REPOSITORY: backend
+  ECS_CLUSTER: FargateClusterStaging
+  ECS_SERVICE: backend-service-staging
+  ECS_TASK_DEFINITION: backend-task-staging
+  ALB_URL: ${{ secrets.STAGING_ALB_URL }}
 
 jobs:
   deploy:
@@ -41,24 +41,24 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t frontend:${{ github.sha }} \
-            ./frontend
+            -t backend:${{ github.sha }} \
+            ./backend
 
       - name: Tag Docker Image
         run: |
           docker tag \
-            frontend:${{ github.sha }} \
-            ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }}
+            backend:${{ github.sha }} \
+            ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
 
       - name: Push Docker Image
         run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
 
       - name: Download Current Task Definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition frontend-task \
+            --task-definition backend-task-staging \
             --query taskDefinition > task-definition.json
 
       - name: Update Image in Task Definition
@@ -66,15 +66,15 @@ jobs:
         id: render-task-definition
         with:
           task-definition: task-definition.json
-          container-name: frontend
-          image: ${{ steps.login-ecr.outputs.registry }}/frontend:${{ github.sha }}
+          container-name: backend
+          image: ${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2.4.0
         with:
           task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
-          service: frontend-service
-          cluster: FargateCluster
+          service: backend-service-staging
+          cluster: FargateClusterStaging
           wait-for-service-stability: true
 
       - name: Health Check

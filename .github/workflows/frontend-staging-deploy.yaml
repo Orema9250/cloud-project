@@ -1,19 +1,19 @@
-name: Deploy Frontend
+name: Deploy Frontend Staging
 
 on:
   push:
     branches:
-      - main
+      - develop
     paths:
       - 'frontend/**'
-      - '.github/workflows/frontend-deploy.yaml'
+      - '.github/workflows/frontend-staging-deploy.yaml'
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: frontend
-  ECS_CLUSTER: FargateCluster
-  ECS_SERVICE: frontend-service
-  ECS_TASK_DEFINITION: frontend-task
-  ALB_URL: ${{ secrets.PROD_ALB_URL }}
+  ECS_CLUSTER: FargateClusterStaging
+  ECS_SERVICE: frontend-service-staging
+  ECS_TASK_DEFINITION: frontend-task-staging
+  ALB_URL: ${{ secrets.STAGING_ALB_URL }}
 
 jobs:
   deploy:
@@ -58,7 +58,7 @@ jobs:
       - name: Download Current Task Definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition frontend-task \
+            --task-definition frontend-task-staging \
             --query taskDefinition > task-definition.json
 
       - name: Update Image in Task Definition
@@ -73,8 +73,8 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2.4.0
         with:
           task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
-          service: frontend-service
-          cluster: FargateCluster
+          service: frontend-service-staging
+          cluster: FargateClusterStaging
           wait-for-service-stability: true
 
       - name: Health Check
