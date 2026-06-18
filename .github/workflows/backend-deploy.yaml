@@ -13,6 +13,7 @@ env:
   ECS_CLUSTER: FargateCluster
   ECS_SERVICE: backend-service
   ECS_TASK_DEFINITION: backend-task
+  ALB_URL: ${{ secrets.PROD_ALB_URL }}
 
 jobs:
   deploy:
@@ -75,3 +76,7 @@ jobs:
           service: backend-service
           cluster: FargateCluster
           wait-for-service-stability: true
+
+      - name: Health Check
+        run: |
+          curl -f $ALB_URL/health

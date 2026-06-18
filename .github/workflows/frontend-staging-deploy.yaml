@@ -13,6 +13,8 @@ env:
   ECS_CLUSTER: FargateClusterStaging
   ECS_SERVICE: frontend-service-staging
   ECS_TASK_DEFINITION: frontend-task-staging
+  ALB_URL: ${{ secrets.STAGING_ALB_URL }}
+
 
 jobs:
   deploy:
@@ -76,3 +78,6 @@ jobs:
           cluster: FargateClusterStaging
           wait-for-service-stability: true
 
+      - name: Health Check
+        run: |
+          curl -f $ALB_URL/health
