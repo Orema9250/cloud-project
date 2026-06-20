@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Description: My three tier architecture using cfn
+#AWSTemplateFormatVersion: "2010-09-09"
+Description: My three tier architecure using ecs fargate
 Resources:
 ##Create a vpc in us-east-1
   myVPC:
@@ -521,7 +521,6 @@ Resources:
       TaskDefinition: !Ref FrontendTaskDefinition
     DependsOn:
       - FrontendListener
-
 ##Create a backend security group
 
   BackendSg:
@@ -560,6 +559,8 @@ Resources:
       TaskDefinition: !Ref BackendTaskDefinition
     DependsOn:
       - BackendListenerRule
+
+
 ##create a load balancer which determines how the traffic is distributed
   myLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -581,7 +582,7 @@ Resources:
       TargetType: ip
       VpcId: !Ref myVPC
 
-##Create a target group that alb distributes the traffic to backend
+  ##Create a blue target group that alb distributes the traffic to backend *old task*
   BackendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -595,7 +596,8 @@ Resources:
       HealthCheckPort: traffic-port
       Matcher:
         HttpCode: "200"
-##Create the port the target grroup will be listening to
+
+##Create the port the target grroup will be listening to *Production listener*
   FrontendListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -605,7 +607,8 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref FrontendTargetGroup
-##Create a listener rule for Backend 
+
+#Create the port the target grroup will be listening to *Test listener*
   BackendListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
