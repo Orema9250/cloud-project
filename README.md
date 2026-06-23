@@ -178,7 +178,7 @@ docker build -t backend .
 docker tag backend:v3 556173312932.dkr.ecr.us-east-1.amazonaws.com/backend:v3
 docker push 556173312932.dkr.ecr.us-east-1.amazonaws.com/backend:v3
 ```
-##### Build Docker Image for Backend 
+##### Build Docker Image for Frontend 
 
 ```bash
 docker build -t frontend .
