@@ -166,7 +166,7 @@ git clone https://github.com/Orema9250/cloud-project.git
 cd project-name
 ```
 
-### Build Docker Image
+### Build Docker Image for Backend 
 
 ```bash
 docker build -t backend .
@@ -175,9 +175,23 @@ docker build -t backend .
 ### Push to ECR
 
 ```bash
-docker tag backend:latest <ecr-uri>
-docker push <ecr-uri>
+docker tag backend:v3 556173312932.dkr.ecr.us-east-1.amazonaws.com/backend:v3
+docker push 556173312932.dkr.ecr.us-east-1.amazonaws.com/backend:v3
 ```
+##### Build Docker Image for Backend 
+
+```bash
+docker build -t frontend .
+```
+
+### Push to ECR
+
+```bash
+docker tag frontend:v1 556173312932.dkr.ecr.us-east-1.amazonaws.com/frontend:v1
+docker push 556173312932.dkr.ecr.us-east-1.amazonaws.com/frontend:v1
+```
+##
+
 
 ### Deploy
 
