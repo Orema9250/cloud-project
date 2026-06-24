@@ -189,10 +189,6 @@ Resources:
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
@@ -508,12 +504,12 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           SecurityGroups:
             - !Ref FrontendSg
           Subnets:
-            - !Ref mySubnet1
-            - !Ref mySubnet2
+            - !Ref mySubnet3
+            - !Ref mySubnet4
       LoadBalancers:
         - ContainerName: frontend
           ContainerPort: 80
