@@ -315,7 +315,7 @@ This troubleshooting process significantly improved my understanding of AWS infr
 ## Github Actions
 
 ![GithubActions](docs/githubAction1.jpg)
-![GithubActions](docs/githubAction2.jpg)
+![GithubActions](docs/githubaction2.jpg)
 ---
 ## Github Workflows
 
