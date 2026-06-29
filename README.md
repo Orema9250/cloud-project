@@ -8,7 +8,10 @@ The solution eliminates server management by leveraging AWS Fargate while enabli
 
 ---
 
-## Architecture
+## Architecture Diagram
+
+![Architecture Diagram](docs/Architecture-diagram/architecture-diagram.drawio.png)
+
 
 ### Components
 
@@ -292,6 +295,70 @@ Through this project, I gained hands-on experience troubleshooting:
 This troubleshooting process significantly improved my understanding of AWS infrastructure design and production deployment workflows.
 
 ---
+
+
+# Screenshots
+
+## ECS Cluster
+
+![ECScluster](docs/ecs-cluster.jpg)
+
+---
+## ECS Task        
+
+![ECSTask](docs/ecs-task.jpg)
+---
+## ECS Service        
+
+![ECSService](docs/ecs-service.jpg)
+---
+## Github Actions
+
+![GithubActions](docs/githubAction1.jpg)
+![GithubActions](docs/githubAction2.jpg)
+---
+## Github Workflows
+
+![GithubWorkflows](docs/githubworkflows.jpg)
+---
+## Elastic Container Register
+![ECR](docs/ecr.jpg)
+![BackendImages](docs/backend-images.jpg)
+![FrontendImages](docs/frontend-images.jpg)
+---
+## Website
+
+![Website](docs/app.jpg)
+
+---
+
+## Stack
+
+![Stack](docs/Stack.jpg)
+---
+## Stack Resources
+
+![StackResources](docs/Stack_Resources1.jpg)
+![StackResources](docs/Stack_Resources2.jpg)
+![StackResources](docs/Stack_Resources3.jpg)
+![StackResources](docs/Stack_Resources4.jpg)
+![StackResources](docs/Stack_Resources5.jpg)
+![StackResources](docs/Stack_Resources6.jpg)
+---
+## Relational Database
+
+![RDS](docs/RDS1.jpg)
+![RDS](docs/RDS2.jpg)
+---
+## Load Balancer
+
+![Loadbalancer](docs/loadbalancer.jpg)
+----
+##Target Group
+
+![FrontendTG](docs/frontendTG.jpg)
+![BackendTG](docs/backendTG.jpg)
+
 
 ## Key DevOps Concepts Demonstrated
 
